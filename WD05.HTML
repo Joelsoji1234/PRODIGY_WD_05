@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Weather App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: url('https://source.unsplash.com/random/1600x900/?weather') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            color: white;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+            transition: background-image 0.5s ease-in-out;
+        }
+        .container {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 20px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        .container.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .weather-info {
+            background: linear-gradient(to bottom right, #2196F3, #21CBF3);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: inline-block;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        .weather-info.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .weather-info h2 {
+            margin: 0;
+        }
+        .form-container {
+            margin-top: 20px;
+        }
+        .form-container input {
+            padding: 10px;
+            width: 80%;
+            max-width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .form-container input:focus {
+            border-color: #2196F3;
+        }
+        .form-container button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #2196F3;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .form-container button:hover {
+            background-color: #1e88e5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app-container">
+        <h1>Weather App</h1>
+        <div class="form-container">
+            <input type="text" id="location-input" placeholder="Enter location">
+            <button onclick="fetchWeatherByLocation()">Get Weather</button>
+        </div>
+        <div id="weather-info" class="weather-info" style="display: none;">
+            <h2 id="city-name"></h2>
+            <p id="weather-description"></p>
+            <p id="temperature"></p>
+            <p id="humidity"></p>
+            <p id="wind-speed"></p>
+        </div>
+    </div>
+    
+    <script>
+        const apiKey = 'YOUR_API_KEY_HERE'; // Replace with your OpenWeatherMap API key
+
+        function fetchWeatherByLocation() {
+            const location = document.getElementById('location-input').value;
+            if (location) {
+                fetch(`https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${apiKey}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displayWeather(data);
+                        updateBackgroundImage(data.weather[0].main);
+                    })
+                    .catch(error => alert('Location not found or an error occurred.'));
+            } else {
+                alert('Please enter a location.');
+            }
+        }
+
+        function displayWeather(data) {
+            if (data.cod === 200) {
+                document.getElementById('city-name').innerText = `${data.name}, ${data.sys.country}`;
+                document.getElementById('weather-description').innerText = data.weather[0].description;
+                document.getElementById('temperature').innerText = `Temperature: ${data.main.temp}°C`;
+                document.getElementById('humidity').innerText = `Humidity: ${data.main.humidity}%`;
+                document.getElementById('wind-speed').innerText = `Wind Speed: ${data.wind.speed} m/s`;
+                document.getElementById('weather-info').style.display = 'block';
+                document.getElementById('weather-info').classList.add('show');
+                document.getElementById('app-container').classList.add('show');
+            } else {
+                alert('Location not found.');
+            }
+        }
+
+        function updateBackgroundImage(weatherCondition) {
+            let imageUrl = 'https://source.unsplash.com/random/1600x900/?weather';
+            switch (weatherCondition.toLowerCase()) {
+                case 'clear':
+                    imageUrl = 'https://source.unsplash.com/random/1600x900/?clear-sky';
+                    break;
+                case 'clouds':
+                    imageUrl = 'https://source.unsplash.com/random/1600x900/?cloudy';
+                    break;
+                case 'rain':
+                    imageUrl = 'https://source.unsplash.com/random/1600x900/?rain';
+                    break;
+                case 'snow':
+                    imageUrl = 'https://source.unsplash.com/random/1600x900/?snow';
+                    break;
+                case 'thunderstorm':
+                    imageUrl = 'https://source.unsplash.com/random/1600x900/?thunderstorm';
+                    break;
+                default:
+                    imageUrl = 'https://source.unsplash.com/random/1600x900/?weather';
+                    break;
+            }
+            document.body.style.backgroundImage = `url(${imageUrl})`;
+        }
+
+        function fetchWeatherByGeolocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const { latitude, longitude } = position.coords;
+                    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            displayWeather(data);
+                            updateBackgroundImage(data.weather[0].main);
+                        })
+                        .catch(error => alert('An error occurred while fetching the weather data.'));
+                });
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+
+        // Fetch weather by geolocation on page load
+        window.onload = fetchWeatherByGeolocation;
+    </script>
+</body>
+</html>
